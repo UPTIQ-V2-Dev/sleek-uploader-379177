@@ -40,20 +40,38 @@ const queryUsers = async <Key extends keyof User>(
         sortBy?: string;
         sortType?: 'asc' | 'desc';
     },
-    keys: Key[] = ['id', 'email', 'name', 'password', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
-): Promise<Pick<User, Key>[]> => {
+    keys: Key[] = ['id', 'email', 'name', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
+): Promise<{
+    results: Pick<User, Key>[];
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalResults: number;
+}> => {
     const page = options.page ?? 1;
     const limit = options.limit ?? 10;
     const sortBy = options.sortBy;
     const sortType = options.sortType ?? 'desc';
+
+    // Get total count for pagination
+    const totalResults = await prisma.user.count({ where: filter });
+    const totalPages = Math.ceil(totalResults / limit);
+
     const users = await prisma.user.findMany({
         where: filter,
         select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
-        skip: page * limit,
+        skip: (page - 1) * limit, // Fix: should be (page - 1) * limit, not page * limit
         take: limit,
         orderBy: sortBy ? { [sortBy]: sortType } : undefined
     });
-    return users as Pick<User, Key>[];
+
+    return {
+        results: users as Pick<User, Key>[],
+        page,
+        limit,
+        totalPages,
+        totalResults
+    };
 };
 
 /**
@@ -97,7 +115,7 @@ const getUserByEmail = async <Key extends keyof User>(
 const updateUserById = async <Key extends keyof User>(
     userId: number,
     updateBody: Prisma.UserUpdateInput,
-    keys: Key[] = ['id', 'email', 'name', 'role'] as Key[]
+    keys: Key[] = ['id', 'email', 'name', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<User, Key> | null> => {
     const user = await getUserById(userId, ['id', 'email', 'name']);
     if (!user) {
@@ -106,6 +124,12 @@ const updateUserById = async <Key extends keyof User>(
     if (updateBody.email && (await getUserByEmail(updateBody.email as string))) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
     }
+
+    // Hash password if provided
+    if (updateBody.password) {
+        updateBody.password = await encryptPassword(updateBody.password as string);
+    }
+
     const updatedUser = await prisma.user.update({
         where: { id: user.id },
         data: updateBody,

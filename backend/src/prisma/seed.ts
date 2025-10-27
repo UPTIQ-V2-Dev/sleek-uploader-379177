@@ -21,6 +21,22 @@ async function main() {
     });
 
     console.log('✅ Created admin user:', admin.email);
+
+    // Create regular user
+    const userPassword = await bcrypt.hash('user123', 12);
+    const user = await prisma.user.upsert({
+        where: { email: 'user@example.com' },
+        update: {},
+        create: {
+            email: 'user@example.com',
+            name: 'Regular User',
+            password: userPassword,
+            role: Role.USER,
+            isEmailVerified: true
+        }
+    });
+
+    console.log('✅ Created regular user:', user.email);
 }
 
 main()

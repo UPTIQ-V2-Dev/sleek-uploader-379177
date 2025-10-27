@@ -1,33 +1,71 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileUploadZone } from '@/components/FileUploadZone';
 import { FilePreview } from '@/components/FilePreview';
 import { UploadProgress } from '@/components/UploadProgress';
 import { useFileUpload } from '@/hooks/useFileUpload';
-import { UploadIcon, RefreshCcw } from 'lucide-react';
+import { authService } from '@/services/auth';
+import { getStoredUser } from '@/lib/api';
+import { UploadIcon, RefreshCcw, LogOut, User } from 'lucide-react';
 
 export const UploadPage = () => {
     const { file, isUploading, progress, error, success, selectFile, startUpload, clearFile, reset } = useFileUpload();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const navigate = useNavigate();
+    const user = getStoredUser();
 
     const handleNewUpload = () => {
         reset();
+    };
+
+    const handleLogout = async () => {
+        try {
+            setIsLoggingOut(true);
+            await authService.logout();
+            navigate('/login');
+        } catch (err) {
+            console.error('Logout failed:', err);
+        } finally {
+            setIsLoggingOut(false);
+        }
     };
 
     return (
         <div className='min-h-screen bg-gradient-to-br from-background via-background to-muted/20'>
             <div className='container mx-auto px-4 py-8'>
                 <div className='max-w-2xl mx-auto'>
-                    {/* Header */}
-                    <div className='text-center mb-8'>
-                        <div className='flex justify-center mb-4'>
+                    {/* Header with User Info */}
+                    <div className='flex justify-between items-center mb-8'>
+                        <div className='flex items-center gap-3'>
                             <div className='p-3 bg-primary/10 rounded-full'>
                                 <UploadIcon className='h-8 w-8 text-primary' />
                             </div>
+                            <div>
+                                <h1 className='text-3xl font-bold tracking-tight'>File Upload</h1>
+                                <p className='text-muted-foreground'>
+                                    Upload your images and PDF files quickly and securely
+                                </p>
+                            </div>
                         </div>
-                        <h1 className='text-3xl font-bold tracking-tight'>File Upload</h1>
-                        <p className='text-muted-foreground mt-2'>
-                            Upload your images and PDF files quickly and securely
-                        </p>
+
+                        <div className='flex items-center gap-4'>
+                            <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                                <User className='h-4 w-4' />
+                                <span>{user?.email}</span>
+                            </div>
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={handleLogout}
+                                disabled={isLoggingOut}
+                                className='flex items-center gap-2'
+                            >
+                                <LogOut className='h-4 w-4' />
+                                {isLoggingOut ? 'Logging out...' : 'Logout'}
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Upload Card */}

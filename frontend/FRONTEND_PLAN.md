@@ -16,7 +16,27 @@ Build an extremely minimal React 19 application for uploading image or PDF files
 
 ## Page-by-Page Implementation Plan
 
-### 1. Main Upload Page (`/`)
+### 1. Login Page (`/login`)
+
+**File**: `src/pages/LoginPage.tsx`
+
+**Components needed**:
+
+- `LoginForm` - Email/password form with validation
+- `AuthLayout` - Simple centered layout for auth pages
+
+**API Integration**:
+
+- Uses existing `authService.login()` from `src/services/auth.ts`
+- Handles authentication state management
+- Redirects to upload page on success
+
+**Types**:
+
+- Uses existing `LoginRequest` and `AuthResponse` types
+- Form validation with react-hook-form + zod
+
+### 2. Main Upload Page (`/`)
 
 **File**: `src/pages/UploadPage.tsx`
 

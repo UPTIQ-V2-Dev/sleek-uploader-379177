@@ -16,7 +16,12 @@ router.post('/reset-password', validate(authValidation.resetPassword), authContr
 router.post('/verify-email', validate(authValidation.verifyEmail), authController.verifyEmail);
 
 // Authenticated route
-router.post('/send-verification-email', auth(), authController.sendVerificationEmail);
+router.post(
+    '/send-verification-email',
+    auth(),
+    validate(authValidation.sendVerificationEmail),
+    authController.sendVerificationEmail
+);
 
 export default router;
 

@@ -4,6 +4,7 @@ import { jwtStrategy } from './config/passport.ts';
 import { errorConverter, errorHandler } from './middlewares/error.ts';
 import { authLimiter } from './middlewares/rateLimiter.ts';
 import xss from './middlewares/xss.ts';
+import fileRoute from './routes/v1/file.route.ts';
 import routes from './routes/v1/index.ts';
 import ApiError from './utils/ApiError.ts';
 import compression from 'compression';
@@ -58,6 +59,9 @@ app.get('/api/v1/health', (req, res) => {
 
 // v1 api routes
 app.use('/api/v1', routes);
+
+// File upload and management routes (matching API spec)
+app.use('/api', fileRoute);
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
