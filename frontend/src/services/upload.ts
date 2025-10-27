@@ -1,6 +1,7 @@
 import { api } from '@/lib/api';
 import type { UploadResponse } from '@/types/upload';
 import { mockUploadResponse } from '@/data/mockData';
+import { emitter } from '@/agentSdk';
 
 export const uploadFile = async (
     file: File,
@@ -18,7 +19,30 @@ export const uploadFile = async (
                 }
                 if (progress >= 100) {
                     clearInterval(interval);
-                    resolve(mockUploadResponse);
+                    const response = mockUploadResponse;
+
+                    // Emit document-uploaded event for mock data
+                    emitter.emit({
+                        agentId: '17069010-f7e9-48ea-90de-bb78c90edfd7',
+                        event: 'document-uploaded',
+                        payload: {
+                            fileId: response.fileId,
+                            fileName: file.name,
+                            fileSize: file.size,
+                            mimeType: file.type
+                        },
+                        documents: response.fileUrl
+                            ? [
+                                  {
+                                      signedUrl: response.fileUrl,
+                                      fileName: file.name,
+                                      mimeType: file.type
+                                  }
+                              ]
+                            : undefined
+                    });
+
+                    resolve(response);
                 }
             }, 200);
         });
@@ -34,6 +58,29 @@ export const uploadFile = async (
         },
         onUploadProgress: onUploadProgress
     });
+
+    // Emit document-uploaded event for successful upload
+    if (response.data.success) {
+        emitter.emit({
+            agentId: '17069010-f7e9-48ea-90de-bb78c90edfd7',
+            event: 'document-uploaded',
+            payload: {
+                fileId: response.data.fileId,
+                fileName: file.name,
+                fileSize: file.size,
+                mimeType: file.type
+            },
+            documents: response.data.fileUrl
+                ? [
+                      {
+                          signedUrl: response.data.fileUrl,
+                          fileName: file.name,
+                          mimeType: file.type
+                      }
+                  ]
+                : undefined
+        });
+    }
 
     return response.data;
 };
